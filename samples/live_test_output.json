@@ -4,7 +4,7 @@
     "provider": "anthropic",
     "model": "claude-sonnet-4-5-20250929"
   },
-  "rate_con_1_LD64392.txt": {
+  "rate_con_1_LD64392.pdf": {
     "load_id": "LD64392",
     "origin": { "city": "Chicago", "state": "IL", "zip": "60601" },
     "destination": { "city": "New York", "state": "NY", "zip": "10012" },
@@ -19,9 +19,9 @@
     "confidence": "high",
     "warnings": []
   },
-  "rate_con_2_LD64408.txt": {
+  "rate_con_2_LD64408.pdf": {
     "load_id": "LD64408",
-    "origin": { "city": "Miami", "state": "FL", "zip": null },
+    "origin": { "city": "Chicago", "state": "IL", "zip": "60601" },
     "destination": { "city": "San Jose", "state": "CA", "zip": null },
     "pickup_date": "2026-08-03",
     "delivery_date": "2026-08-05",
@@ -30,11 +30,11 @@
     "fuel_surcharge": null,
     "total_rate": 700.0,
     "weight_lbs": null,
-    "commodity": "Ceramics, Commodity_t",
+    "commodity": "Commodity_t, Ceramics",
     "confidence": "medium",
     "warnings": ["unaccounted_charges"]
   },
-  "rate_con_3_LD64407.txt": {
+  "rate_con_3_LD64407.pdf": {
     "load_id": "LD64407",
     "origin": { "city": "Chicago", "state": "IL", "zip": "60601" },
     "destination": { "city": "New York", "state": "NY", "zip": "10012" },
@@ -63,5 +63,35 @@
     "commodity": "Frozen poultry",
     "confidence": "low",
     "warnings": ["missing_fields:destination.city,destination.state", "conflicting_totals"]
+  },
+  "rate_con_5_email_body.eml": {
+    "load_id": "LD70001",
+    "origin": { "city": "Columbus", "state": "OH", "zip": "43215" },
+    "destination": { "city": "Nashville", "state": "TN", "zip": "37201" },
+    "pickup_date": "2026-08-20",
+    "delivery_date": "2026-08-22",
+    "equipment_type": "van",
+    "line_haul_rate": 1850.0,
+    "fuel_surcharge": null,
+    "total_rate": 1850.0,
+    "weight_lbs": 22000.0,
+    "commodity": "Packaged foods",
+    "confidence": "high",
+    "warnings": []
+  },
+  "rate_con_6_email_with_pdf_attachment.eml": {
+    "load_id": "LD64407",
+    "origin": { "city": "Chicago", "state": "IL", "zip": "60601" },
+    "destination": { "city": "New York", "state": "NY", "zip": "10012" },
+    "pickup_date": "2026-07-31",
+    "delivery_date": "2026-08-02",
+    "equipment_type": "flatbed",
+    "line_haul_rate": 50.0,
+    "fuel_surcharge": null,
+    "total_rate": 50.0,
+    "weight_lbs": 422.0,
+    "commodity": "Ceramics",
+    "confidence": "high",
+    "warnings": []
   }
 }
