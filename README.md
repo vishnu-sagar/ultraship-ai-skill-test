@@ -19,6 +19,11 @@ samples/                    3 real sample rate confirmations, as actual PDFs
 output/
   live_test_output.json     captured output from a real Anthropic API run
                              over all samples (see "Live test evidence")
+eval/
+  ground_truth.json         hand-derived expected values per sample
+  run_eval.py                runs the real pipeline against ground truth,
+                             reports per-field/record accuracy + confidence
+                             calibration (implements the Part 2 eval-set idea)
 extraction/
   schema.py                 pydantic schema + safe_parse() (never raises)
   llm_client.py              Anthropic client, forced tool-use for structured output
@@ -148,6 +153,32 @@ booking real freight on a bad number.
   which retries these with exponential backoff before ever raising; a
   failure that still reaches the pipeline is treated as non-retryable and
   routed to the safe all-null/`low`-confidence fallback rather than crashing.
+
+## Eval harness
+
+[Part 2](PART2-EVALUATION-AND-RELIABILITY.md) describes an eval-set strategy
+(§1) and a confidence-calibration check (§2). [`eval/run_eval.py`](eval/run_eval.py)
+implements it, rather than leaving it as a proposal: it runs the real
+pipeline against [`eval/ground_truth.json`](eval/ground_truth.json)
+(hand-derived from the source documents, not copied from model output — with
+genuinely ambiguous fields, like which stop counts as "the" origin on a
+3-stop document, marked `any_of`/`skip` explicitly rather than forced to a
+single answer) and reports per-field accuracy, record-level accuracy, and —
+the check that matters most — whether "high" confidence actually means
+correct.
+
+```bash
+python -m eval.run_eval                    # against the real Anthropic API
+python -m eval.run_eval --provider mock    # offline, no API key
+```
+
+Latest run against the real API: **77/77 (100%) per-field accuracy, 6/6
+records fully correct, confidence labels matched expectations 6/6, and all 4
+`"high"`-confidence records had every scored field correct** (i.e. `high`
+was never falsely trusted in this run). The offline mock provider scores
+noticeably worse (~64% per-field) on the same ground truth — expected, since
+it's a naive regex stand-in — which is itself a useful sanity check that the
+harness is measuring something real rather than trivially passing.
 
 ## Live test evidence
 

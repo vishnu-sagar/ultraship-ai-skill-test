@@ -1,0 +1,117 @@
+{
+  "_note": "Ground truth hand-derived from the source documents (not copied from model output). Fields with 'any_of' mark genuine ambiguity in the source doc (e.g. multi-stop origin selection) -- either value counts as correct. Fields with 'skip' are excluded from per-field scoring with a reason, matching the Part 2 eval-set design (some cases are ambiguous even for a human labeler).",
+
+  "rate_con_1_LD64392.pdf": {
+    "expected_confidence": "high",
+    "fields": {
+      "load_id": "LD64392",
+      "origin.city": "Chicago",
+      "origin.state": "IL",
+      "destination.city": "New York",
+      "destination.state": "NY",
+      "pickup_date": "2026-07-30",
+      "delivery_date": "2026-08-01",
+      "equipment_type": "flatbed",
+      "line_haul_rate": 50.0,
+      "fuel_surcharge": null,
+      "total_rate": 50.0,
+      "weight_lbs": 182.0,
+      "commodity": "Ceramics"
+    }
+  },
+
+  "rate_con_2_LD64408.pdf": {
+    "expected_confidence": "medium",
+    "fields": {
+      "load_id": "LD64408",
+      "origin.city": {"any_of": ["Chicago", "Miami"]},
+      "origin.state": {"any_of": ["IL", "FL"]},
+      "destination.city": "San Jose",
+      "destination.state": "CA",
+      "pickup_date": {"any_of": ["2026-08-03", "2026-07-28"]},
+      "delivery_date": "2026-08-05",
+      "equipment_type": "flatbed",
+      "line_haul_rate": 500.0,
+      "fuel_surcharge": null,
+      "total_rate": 700.0,
+      "weight_lbs": null,
+      "commodity": {"skip": true, "reason": "3-stop, 2-commodity document; which commodity is 'the' commodity is genuinely ambiguous"}
+    }
+  },
+
+  "rate_con_3_LD64407.pdf": {
+    "expected_confidence": "high",
+    "fields": {
+      "load_id": "LD64407",
+      "origin.city": "Chicago",
+      "origin.state": "IL",
+      "destination.city": "New York",
+      "destination.state": "NY",
+      "pickup_date": "2026-07-31",
+      "delivery_date": "2026-08-02",
+      "equipment_type": "flatbed",
+      "line_haul_rate": 50.0,
+      "fuel_surcharge": null,
+      "total_rate": 50.0,
+      "weight_lbs": 422.0,
+      "commodity": "Ceramics"
+    }
+  },
+
+  "rate_con_4_edge_cases.txt": {
+    "expected_confidence": "low",
+    "fields": {
+      "load_id": "LD99999",
+      "origin.city": "Springfield",
+      "origin.state": "OH",
+      "destination.city": null,
+      "destination.state": null,
+      "pickup_date": "2026-03-04",
+      "delivery_date": "2026-03-09",
+      "equipment_type": "reefer",
+      "line_haul_rate": 1200.0,
+      "fuel_surcharge": 150.0,
+      "total_rate": 1500.0,
+      "weight_lbs": 38000.0,
+      "commodity": "Frozen poultry"
+    }
+  },
+
+  "rate_con_5_email_body.eml": {
+    "expected_confidence": "high",
+    "fields": {
+      "load_id": "LD70001",
+      "origin.city": "Columbus",
+      "origin.state": "OH",
+      "destination.city": "Nashville",
+      "destination.state": "TN",
+      "pickup_date": "2026-08-20",
+      "delivery_date": "2026-08-22",
+      "equipment_type": "van",
+      "line_haul_rate": 1850.0,
+      "fuel_surcharge": null,
+      "total_rate": 1850.0,
+      "weight_lbs": 22000.0,
+      "commodity": "Packaged foods"
+    }
+  },
+
+  "rate_con_6_email_with_pdf_attachment.eml": {
+    "expected_confidence": "high",
+    "fields": {
+      "load_id": "LD64407",
+      "origin.city": "Chicago",
+      "origin.state": "IL",
+      "destination.city": "New York",
+      "destination.state": "NY",
+      "pickup_date": "2026-07-31",
+      "delivery_date": "2026-08-02",
+      "equipment_type": "flatbed",
+      "line_haul_rate": 50.0,
+      "fuel_surcharge": null,
+      "total_rate": 50.0,
+      "weight_lbs": 422.0,
+      "commodity": "Ceramics"
+    }
+  }
+}
