@@ -2,77 +2,84 @@
 
 ## 1. Building an eval set
 
-**Ground truth**: hand-labeled JSON per document, using the exact Part 1
-schema. Two independent labelers per document, with disagreements reconciled
-by a third adjudicator — a single labeler isn't reliable here because
-multi-stop origin/destination selection has genuine ambiguity even for a
-human.
+Ground truth comes from hand-labeling documents against the Part 1 schema —
+but I wouldn't trust a single labeler here. Multi-stop docs genuinely confuse
+humans too (which pickup counts as "the" origin isn't always obvious), so
+every document gets labeled by two people, and a third person breaks ties.
 
-**Size**: start with 50–100 documents, deliberately stratified across the
-axes we already know cause trouble, not picked randomly: single vs. multi-stop,
-itemized vs. non-itemized fuel surcharge, clean vs. ambiguous dates, PDF vs.
-email-body vs. email-with-PDF-attachment, and a spread of equipment types and
-shippers/carriers. Treat it as a living set, not a one-time deliverable —
-every real production mismatch a human corrects gets added as a new eval
-case, so the set grows exactly where the pipeline is actually weak.
+For size, I'd rather have 50–100 well-chosen documents than 500 random ones.
+"Well-chosen" means deliberately covering the stuff we already know breaks
+things: multi-stop vs. single-stop, itemized vs. lumped-in fuel surcharge,
+clean dates vs. ambiguous ones, PDFs vs. email bodies vs. emails with a PDF
+attached, different shippers and carriers. And it shouldn't stay static —
+every time a human corrects something in production, that document becomes a
+new eval case. The set should basically grow itself out of real mistakes.
 
-**Partial correctness scoring**: score per field, not just exact-whole-record
-match, since "right rate, wrong date" and "everything wrong" are very
-different failures:
-- Structural fields (`load_id`, dates, city/state) → exact match after normalization.
-- Numeric fields (rates, weight) → tolerance-based match (e.g. within $0.01).
-- `equipment_type` → categorical match.
-- Report both **exact-record accuracy** and **per-field accuracy**, plus
-  **confidence calibration**: for each confidence bucket, what fraction of
-  records actually had every load-critical field correct? `high` should be
-  ~100%; if it isn't, the confidence rule (not the extraction prompt) needs
-  fixing.
+On scoring, whole-record pass/fail is too blunt — "right rate, wrong date" is
+a very different failure than "everything's wrong," and lumping them together
+hides that. So I'd score field by field: exact match (after normalizing) for
+things like load ID and city/state, a small tolerance for money and weight
+(rounding shouldn't count as an error), and categorical match for equipment
+type. Then report both per-field accuracy and full-record accuracy, plus one
+more thing that matters more than either: how well confidence is calibrated.
+If a document is marked "high" confidence, it should basically always be
+right — if the "high" bucket has a real error rate, that's a bug in the
+confidence logic, not the extraction.
 
 ## 2. Which metric matters most, and why
 
-**False-auto-book rate**: the fraction of `confidence: "high"` records where
-a load-critical field (rate, dates, origin/destination) is actually wrong.
-This must be near zero, even at the cost of routing more loads to review.
-Given the spec's own framing — a wrong rate that auto-books is worse than a
-flagged-for-review load — this is a precision-of-the-trust-decision metric,
-not a recall-of-extraction metric.
+The one I'd actually lose sleep over is the false-auto-book rate — how often
+a load marked "high confidence" (i.e., cleared to go straight into the
+system) turns out to have a wrong rate or date. The spec basically hands you
+this answer: a wrong number that books itself is worse than a load that sits
+in a review queue for two extra minutes. So this is a precision problem, not
+a recall problem — I'd rather under-trust and route more to review than
+over-trust and let a bad number slip through.
 
-Coverage (the fraction of loads that reach `high` confidence at all) is a
-real secondary metric — too low and ops is manually reviewing everything,
-defeating the point of automation — but it's secondary. I'd rather ship a
-system that auto-books 40% of loads with a near-zero false-auto-book rate
-than one that auto-books 90% with a real, silent error rate baked in.
+Coverage — what percentage of loads even reach "high" confidence — matters
+too, because if it's too low, humans are reviewing everything and the
+automation isn't buying anyone anything. But I'd take a system that
+auto-books 40% of loads with almost no false positives over one that
+auto-books 90% with a hidden error rate. The first one is boring and
+trustworthy; the second one is a lawsuit waiting to happen.
 
 ## 3. Detecting drift or regressions in production
 
-- **Confidence distribution per source** (shipper/carrier, or sender domain
-  for emails): a new shipper suddenly producing far more `low`/`medium` than
-  the historical baseline is the earliest, cheapest signal of an unhandled
-  format — visible before you even know if the extracted values are wrong.
-- **Warning-code rates per source**: a spike in a specific code (e.g.
-  `conflicting_totals`, `unverified_location`) points at *what* changed, not
-  just *that* something did.
-- **Human-correction rate**: log every diff when a reviewer corrects a field.
-  A rising correction rate concentrated on one field (e.g. `pickup_date`
-  suddenly wrong across many loads) is ground truth that something regressed.
-- **Model version pinning + gating**: already pinned to a dated snapshot
-  (`claude-sonnet-4-5-20250929`), not a floating alias. Before bumping to a
-  new snapshot, re-run the fixed eval set and diff per-field accuracy and
-  confidence distribution against the current version — treat any
-  regression as a release blocker, not a surprise discovered in prod.
-- **Shadow/canary mode**: run prompt or model changes against live traffic in
-  parallel (not user-facing), diff outputs against the currently-live
-  version, and alert on deltas beyond a threshold before cutover.
+The cheapest, earliest signal isn't "is the data wrong" — it's watching the
+confidence distribution per shipper/carrier over time. If a specific sender
+suddenly starts generating way more medium/low results than it used to,
+that's a red flag before you've even confirmed anything's actually wrong.
+Same idea with warning codes — a spike in one specific warning (say,
+conflicting totals) for one sender tells you roughly what changed, not just
+that something did.
+
+The most honest signal, though, is what humans actually correct. Every time
+a reviewer edits a field the pipeline filled in, that diff should get logged.
+If corrections on one field start climbing — say pickup dates are suddenly
+wrong across a bunch of loads — that's ground truth that something broke, no
+eval set required.
+
+For model updates specifically: I'm already pinning to a dated snapshot
+(`claude-sonnet-4-5-20250929`) rather than a "latest" alias, precisely
+because I don't want behavior to change under me without warning. Before
+moving to a new snapshot, I'd re-run the eval set and compare accuracy and
+confidence distribution against the current one — any regression blocks the
+upgrade, it doesn't get discovered by an angry broker later. Ideally you'd
+also run a new model or prompt version in shadow mode against real traffic
+first (not user-facing) and diff its output against production before ever
+cutting over.
 
 ## 4. Human-in-the-loop moment
 
-Anything below `confidence: "high"` never silently auto-populates — it lands
-in a review queue in the load-creation screen the broker already uses, not a
-separate tool. The moment itself: the extracted JSON pre-fills the load form
-with the *specific* flagged field(s) visually highlighted and annotated with
-why (e.g. "conflicting totals: $1,350 expected vs. $1,500 stated"), next to a
-side-by-side preview of the source document so the reviewer is confirming or
-correcting, not re-deriving from scratch. A one-click "confirm as-is" handles
-the common false-positive case, and editing any field re-runs the
-conflicting-totals/missing-field checks live, so the reviewer gets instant
-feedback instead of submitting blind.
+Nothing below "high" confidence auto-populates, full stop — it goes into a
+review queue that lives inside the load-creation screen brokers already use,
+not some separate tool they have to remember exists. When a broker opens a
+flagged load, the form is already filled in from the extraction, but the
+specific field that triggered the flag is highlighted with a plain-English
+reason next to it — something like "expected $1,350 based on line haul + fuel,
+but the document says $1,500" — with the original document sitting right
+next to it so they're confirming against the source, not hunting for it.
+Most of the time the flag will turn out to be a non-issue, so a one-click
+"looks fine, book it" should be the fastest path. If they do edit a field,
+the conflicting-totals/missing-field checks should re-run immediately, so
+they get instant feedback instead of submitting and hoping.
