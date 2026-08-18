@@ -28,6 +28,20 @@ accept the first offer or negotiate up), how recent their last known capacity
 signal was, and a rough deadhead estimate if we have their last known
 position from a load board posting.
 
+**Directionality matters as much as the lane itself.** A carrier whose last
+delivery just landed near our pickup point, heading back toward their home
+base or a lane they run regularly, is a much stronger match than one who'd
+have to divert out of their way to take it — even if both have hauled this
+lane before. That carrier is often willing to take a below-market rate on
+that leg simply to avoid deadheading home empty, which is exactly why a
+"good rate" isn't a fixed number — it's relative to that carrier's
+alternative (drive back empty vs. take this load at a discount). So the
+feature isn't just "have they run this lane," it's "where are they *right
+now*, and does this load happen to be on their way home or their way to
+their next known lane." That's a materially different, and more useful,
+signal than lane history alone, and it's why the last-known-position /
+deadhead-estimate feature above matters as much as the historical ones.
+
 ## 2. Where LLMs help, and where they don't
 
 The core of this problem — given a set of candidate carriers and a load,
@@ -123,3 +137,5 @@ supporting data:
   non-blocking — show the ranked list immediately from the (fast) classical
   model, and stream in the one-line explanations a moment later, so no
   broker is waiting on an LLM response just to see who to call.
+
+all these terms and jargons were new to me and had to read a few to understand what these jargons like Lane , spot market etc are

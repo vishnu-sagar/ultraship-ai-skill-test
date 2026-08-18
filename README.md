@@ -8,52 +8,6 @@ confirmation into the structured JSON schema specified in the take-home.
 > Part 3 (System Design — Carrier Match) is answered in
 > [PART3-SYSTEM-DESIGN-CARRIER-MATCH.md](PART3-SYSTEM-DESIGN-CARRIER-MATCH.md).
 
-## How each spec requirement is met
-
-**1. "Use an LLM API of your choice (Anthropic, OpenAI, or local model)."**
-Anthropic Claude (`claude-sonnet-4-5-20250929`), via [`extraction/llm_client.py`](extraction/llm_client.py).
-The call uses forced tool-use (`tool_choice={"type": "tool", ...}`) so the
-model must respond by filling in a JSON-schema-shaped tool input rather than
-writing free-form JSON in prose — this removes most of the "model wrapped the
-JSON in markdown/explanation text" failure mode before it can even happen.
-
-**2. "Enforce the schema — malformed model output should never crash the
-pipeline or silently produce bad data."**
-Four layers, in [`extraction/pipeline.py`](extraction/pipeline.py) and
-[`extraction/schema.py`](extraction/schema.py):
-- Structured tool-use output (above) reduces malformed output at the source.
-- The result is still treated as untrusted and independently re-validated
-  against a `pydantic` model (`safe_parse`), which **never raises** — it
-  returns `(None, errors)` on failure instead of throwing.
-- If validation fails, the errors are fed back to the model as a repair
-  prompt and retried (bounded, `MAX_REPAIR_ATTEMPTS = 2`).
-- If it still fails (or the API call itself errors — auth/network/rate
-  limit), the pipeline returns an explicit, schema-shaped, all-null result
-  with `confidence: "low"` — never a crash, never a guess.
-
-**3. "Implement the confidence field with real logic, not vibes... how you
-decide when extraction is trustworthy enough to auto-populate a load vs.
-flag for human review."**
-See "Confidence field: how it's decided" below for the full rule. Short
-version: `confidence` is computed deterministically in
-[`extraction/confidence.py`](extraction/confidence.py) from field
-completeness + validation warnings + whether a repair retry was needed — it
-is never self-reported by the LLM, because LLM self-reported confidence
-isn't calibrated. **Only `high` should auto-populate a load without review;
-`medium` and `low` should be routed to a human-in-the-loop queue.**
-
-**4. "Handle at least these failure cases explicitly: missing fields,
-conflicting totals (line haul + fuel ≠ total), and dates written
-ambiguously (e.g., '3/4/26')."**
-See "Failure cases handled explicitly" below for the full list (this also
-covers two extra cases beyond the minimum: equipment-type synonyms and
-hallucinated origin/destination on multi-stop docs). Short version:
-- Missing fields → `find_missing_fields` walks dotted paths and downgrades confidence.
-- Conflicting totals → `check_conflicting_totals`; a real mismatch forces `confidence: low`.
-- Ambiguous dates → `is_ambiguous_date_string` detects e.g. `3/4/26` and the
-  prompt resolves it via US `MM/DD/YYYY` convention rather than inventing an
-  unstated date.
-
 ## Layout
 
 ```
@@ -236,3 +190,49 @@ strategy and its output quality is intentionally not representative (e.g. it
 can misattribute the mailing address as the origin city) — the pipeline
 plumbing around it (schema enforcement, validators, confidence) is what's
 being demonstrated by the tests, not the mock's parsing accuracy.
+
+## How each spec requirement is met
+
+**1. "Use an LLM API of your choice (Anthropic, OpenAI, or local model)."**
+Anthropic Claude (`claude-sonnet-4-5-20250929`), via [`extraction/llm_client.py`](extraction/llm_client.py).
+The call uses forced tool-use (`tool_choice={"type": "tool", ...}`) so the
+model must respond by filling in a JSON-schema-shaped tool input rather than
+writing free-form JSON in prose — this removes most of the "model wrapped the
+JSON in markdown/explanation text" failure mode before it can even happen.
+
+**2. "Enforce the schema — malformed model output should never crash the
+pipeline or silently produce bad data."**
+Four layers, in [`extraction/pipeline.py`](extraction/pipeline.py) and
+[`extraction/schema.py`](extraction/schema.py):
+- Structured tool-use output (above) reduces malformed output at the source.
+- The result is still treated as untrusted and independently re-validated
+  against a `pydantic` model (`safe_parse`), which **never raises** — it
+  returns `(None, errors)` on failure instead of throwing.
+- If validation fails, the errors are fed back to the model as a repair
+  prompt and retried (bounded, `MAX_REPAIR_ATTEMPTS = 2`).
+- If it still fails (or the API call itself errors — auth/network/rate
+  limit), the pipeline returns an explicit, schema-shaped, all-null result
+  with `confidence: "low"` — never a crash, never a guess.
+
+**3. "Implement the confidence field with real logic, not vibes... how you
+decide when extraction is trustworthy enough to auto-populate a load vs.
+flag for human review."**
+See "Confidence field: how it's decided" above for the full rule. Short
+version: `confidence` is computed deterministically in
+[`extraction/confidence.py`](extraction/confidence.py) from field
+completeness + validation warnings + whether a repair retry was needed — it
+is never self-reported by the LLM, because LLM self-reported confidence
+isn't calibrated. **Only `high` should auto-populate a load without review;
+`medium` and `low` should be routed to a human-in-the-loop queue.**
+
+**4. "Handle at least these failure cases explicitly: missing fields,
+conflicting totals (line haul + fuel ≠ total), and dates written
+ambiguously (e.g., '3/4/26')."**
+See "Failure cases handled explicitly" above for the full list (this also
+covers two extra cases beyond the minimum: equipment-type synonyms and
+hallucinated origin/destination on multi-stop docs). Short version:
+- Missing fields → `find_missing_fields` walks dotted paths and downgrades confidence.
+- Conflicting totals → `check_conflicting_totals`; a real mismatch forces `confidence: low`.
+- Ambiguous dates → `is_ambiguous_date_string` detects e.g. `3/4/26` and the
+  prompt resolves it via US `MM/DD/YYYY` convention rather than inventing an
+  unstated date.
