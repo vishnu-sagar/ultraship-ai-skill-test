@@ -187,13 +187,6 @@ booking real freight on a bad number.
   failure that still reaches the pipeline is treated as non-retryable and
   routed to the safe all-null/`low`-confidence fallback rather than crashing.
 
-## Why `requests`/`pydantic`/`anthropic` and not zero-dependency
-
-Originally scoped this as stdlib-only to sidestep flaky sandbox networking,
-but `pydantic` and `anthropic` installed successfully, and both meaningfully
-improve the "schema enforcement" and "structured outputs" story the exercise
-is evaluating, so the final version uses them.
-
 ## Live test evidence
 
 Ran end-to-end against the real Anthropic API (`claude-sonnet-4-5-20250929`)
@@ -216,25 +209,6 @@ against all 4 samples. Raw output captured in
   This is the exact cost-asymmetry scenario the spec calls out: a $150
   discrepancy that would otherwise auto-book at the wrong rate is instead
   routed to human review.
-
-## Requirement vs. implementation
-
-| Spec requirement | Status | Where |
-| --- | --- | --- |
-| Use an LLM API of your choice | ✅ Anthropic Claude (`claude-sonnet-4-5-20250929`), forced tool-use | [`extraction/llm_client.py`](extraction/llm_client.py) |
-| Accept rate cons as PDFs *and* emails ("hundreds of different formats") | ✅ `.pdf`, `.eml` (body text and/or PDF attachments), `.txt` all supported | [`extraction/pdf_utils.py`](extraction/pdf_utils.py), [`extraction/email_utils.py`](extraction/email_utils.py) |
-| Output matches the exact JSON schema | ✅ All 12 fields, correct nesting/types/enums | [`extraction/schema.py`](extraction/schema.py) |
-| Malformed model output must never crash the pipeline or silently produce bad data | ✅ `safe_parse` never raises; invalid output triggers a bounded repair retry; total failure returns an explicit all-null/`low`-confidence result, never a crash or a guess | [`extraction/pipeline.py`](extraction/pipeline.py) |
-| `confidence` implemented with real logic, not vibes | ✅ Deterministic rule combining field completeness, validation flags, and repair-retry count — not LLM self-reporting | [`extraction/confidence.py`](extraction/confidence.py) |
-| Handle missing fields | ✅ Dotted-path completeness check against load-critical fields | [`extraction/validators.py`](extraction/validators.py) `find_missing_fields` |
-| Handle conflicting totals (line haul + fuel ≠ total) | ✅ Hard flag when both figures are known and mismatched; softer flag when `fuel_surcharge` is unstated. Verified live on synthetic sample 4 | `check_conflicting_totals` |
-| Handle ambiguously written dates (e.g. `3/4/26`) | ✅ Regex-detected ambiguity + explicit US-convention prompt instruction; verified live on synthetic sample 4 | `is_ambiguous_date_string` |
-| README explains when to trust extraction vs. flag for review | ✅ See "Confidence field: how it's decided" above | this file |
-| 3 provided samples used as test input | ✅ Split into standalone PDFs in `samples/` (real PDF text, not hand-typed) and used in both mock tests and the live run | [samples/](samples/) |
-| Live-tested against a real LLM (not just unit tests) | ✅ | [`samples/live_test_output.json`](samples/live_test_output.json) |
-| *(beyond spec)* Equipment-type synonyms code-enforced, not just prompted | ✅ Hardcoded lookup table | [`extraction/equipment.py`](extraction/equipment.py) |
-| *(beyond spec)* Guard against hallucinated origin/destination on multi-stop docs | ✅ Verifies the city appears in source text | `find_unverified_locations` |
-| *(beyond spec)* Explicit backoff for transient API errors (rate limits/5xx) | ✅ Configurable `max_retries`/`timeout` passed to the Anthropic SDK | [`extraction/llm_client.py`](extraction/llm_client.py) |
 
 Known gaps / things not implemented:
 - Multi-stop *ordering* (deciding which of several pickups is chronologically
