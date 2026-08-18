@@ -28,20 +28,21 @@ confidence logic, not the extraction.
 
 ## 2. Which metric matters most, and why
 
-The one I'd actually lose sleep over is the false-auto-book rate — how often
-a load marked "high confidence" (i.e., cleared to go straight into the
-system) turns out to have a wrong rate or date. The spec basically hands you
-this answer: a wrong number that books itself is worse than a load that sits
-in a review queue for two extra minutes. So this is a precision problem, not
-a recall problem — I'd rather under-trust and route more to review than
-over-trust and let a bad number slip through.
+The metric that matters most is the false-auto-book rate — how often a load
+marked "high confidence" (cleared to go straight into the system) turns out
+to have a wrong rate or date. The spec basically hands you this answer: a
+wrong number that books itself is worse than a load that sits in a review
+queue for two extra minutes. So this is a precision problem, not a recall
+problem — better to under-trust and route more to review than over-trust and
+let a bad number through.
 
 Coverage — what percentage of loads even reach "high" confidence — matters
-too, because if it's too low, humans are reviewing everything and the
-automation isn't buying anyone anything. But I'd take a system that
-auto-books 40% of loads with almost no false positives over one that
-auto-books 90% with a hidden error rate. The first one is boring and
-trustworthy; the second one is a lawsuit waiting to happen.
+too, because if it's too low, humans end up reviewing everything and the
+automation isn't saving anyone time. But it's secondary. I'd take a system
+that auto-books 40% of loads with almost no false positives over one that
+auto-books 90% with a hidden error rate, because the second one erodes trust
+the first time a broker gets burned by it, and trust is hard to win back
+once that happens.
 
 ## 3. Detecting drift or regressions in production
 
