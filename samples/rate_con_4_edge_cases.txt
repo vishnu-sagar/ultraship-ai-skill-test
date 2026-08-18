@@ -1,0 +1,21 @@
+# Synthetic fixture (not from the original PDF) used to exercise edge cases
+# required by the take-home spec: ambiguous dates, missing fields, conflicting totals.
+
+RATE CONFIRMATION
+
+Load #: LD99999
+Carrier: Acme Trucking LLC
+Equipment: Reefer
+
+Pickup: Springfield, OH
+Delivery city/state not fully specified in this document.
+
+Pickup Date: 3/4/26
+Delivery Date: 3/9/26
+
+Line Haul: $1,200.00
+Fuel Surcharge: $150.00
+Total Rate Due: $1,500.00
+
+Weight: 38,000 lbs
+Commodity: Frozen poultry

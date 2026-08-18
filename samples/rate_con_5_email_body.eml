@@ -1,0 +1,33 @@
+Content-Type: multipart/mixed; boundary="===============0267743592382863826=="
+MIME-Version: 1.0
+From: dispatch@acmefreight.example.com
+To: broker@ultraship.ai
+Subject: RATE CONFIRMATION - Load LD70001
+
+--===============0267743592382863826==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+Hi team,
+
+Please confirm the following load per our call:
+
+Load #: LD70001
+Carrier: Acme Freight LLC
+Equipment: Dry Van
+
+Pickup: Columbus, OH 43215
+Delivery: Nashville, TN 37201
+
+Pickup Date: 08/20/2026
+Delivery Date: 08/22/2026
+
+Rate: $1,850.00 all-in (no separate fuel surcharge line)
+Weight: 22,000 lbs
+Commodity: Packaged foods
+
+Thanks,
+Dispatch
+
+--===============0267743592382863826==--
