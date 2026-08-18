@@ -16,6 +16,9 @@ samples/                    3 real sample rate confirmations, as actual PDFs
                              1 synthetic edge-case .txt fixture +
                              2 synthetic .eml fixtures (body-only, and body +
                              PDF attachment -- the common "see attached" case)
+output/
+  live_test_output.json     captured output from a real Anthropic API run
+                             over all samples (see "Live test evidence")
 extraction/
   schema.py                 pydantic schema + safe_parse() (never raises)
   llm_client.py              Anthropic client, forced tool-use for structured output
@@ -150,7 +153,7 @@ booking real freight on a bad number.
 
 Ran end-to-end against the real Anthropic API (`claude-sonnet-4-5-20250929`)
 against all 4 samples. Raw output captured in
-[`samples/live_test_output.json`](samples/live_test_output.json). Highlights:
+[`output/live_test_output.json`](output/live_test_output.json). Highlights:
 
 - Samples 1 & 3 (single pickup/drop, clean totals): extracted perfectly,
   `confidence: "high"`, zero warnings.
