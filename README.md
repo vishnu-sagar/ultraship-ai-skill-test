@@ -5,6 +5,8 @@ confirmation into the structured JSON schema specified in the take-home.
 
 > Part 2 (Evaluation & Reliability) is answered in
 > [PART2-EVALUATION-AND-RELIABILITY.md](PART2-EVALUATION-AND-RELIABILITY.md).
+> Part 3 (System Design — Carrier Match) is answered in
+> [PART3-SYSTEM-DESIGN-CARRIER-MATCH.md](PART3-SYSTEM-DESIGN-CARRIER-MATCH.md).
 
 ## How each spec requirement is met
 

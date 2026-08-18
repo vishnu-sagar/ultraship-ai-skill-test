@@ -1,5 +1,12 @@
 # Part 2 — Evaluation & Reliability
 
+Everything below is written from the angle of shipping this to brokers who
+aren't technical and are moving real freight/real money on what the pipeline
+outputs — not from the angle of maximizing a benchmark score. That's why
+"which metric matters most" (§2) isn't accuracy, and why the eval set (§1)
+is judged on whether "high confidence" can actually be trusted, not on a
+leaderboard number.
+
 ## 1. Building an eval set
 
 Ground truth comes from hand-labeling documents against the Part 1 schema —
