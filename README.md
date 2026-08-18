@@ -3,6 +3,9 @@
 A small, dependency-light pipeline that turns the raw text of a freight rate
 confirmation into the structured JSON schema specified in the take-home.
 
+> Part 2 (Evaluation & Reliability) is answered in
+> [PART2-EVALUATION-AND-RELIABILITY.md](PART2-EVALUATION-AND-RELIABILITY.md).
+
 ## How each spec requirement is met
 
 **1. "Use an LLM API of your choice (Anthropic, OpenAI, or local model)."**
